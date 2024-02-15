@@ -2,47 +2,69 @@ package p02_ImpLockTable;
 
 import p00_CommonA.Table;
 
-public class ImplicitLockTable extends Table{
-	
-	/* Declare and initialize tour simple-typed variables here */
+public class ImplicitLockTable extends Table {
+
+	private boolean tableIsFreeToUse = true;
 
 	protected void gainExclusiveAccess() {
-		/* COMPLETE */
+		while (true) {
+			synchronized (this) {
+				if (tableIsFreeToUse) {
+					tableIsFreeToUse = false;
+					return; // ahora que hemos bloqueado la tabla salimos de la espera infinita
+				}
+			}
+		}
 	}
-
 
 	protected void releaseExclusiveAccess() {
-		/* COMPLETE */
+		synchronized (this) {
+			tableIsFreeToUse = true;
+		}
 	}
-
 
 	public void putJack(int id) {
-		/* COMPLETE */
+		this.gainExclusiveAccess();
+		while ((this.ffs >= 4) || (this.ffs == 0 && id != 0) || (this.ffs == 3 && id != 1)) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
 	}
 
-	
 	public void putQueen(int id) {
-		/* COMPLETE */
+		this.gainExclusiveAccess();
+		while ((this.ffs >= 4) || (this.ffs == 0 && id != 0) || (this.ffs == 3 && id != 1)) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
 	}
 
-	
 	public void putKing(int id) {
-		/* COMPLETE */
+		this.gainExclusiveAccess();
+		while ((this.ffs >= 4) || (this.ffs == 0 && id != 0) || (this.ffs == 3 && id != 1)) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
 	}
-
 
 	public void cardPut() {
-		/* COMPLETE */
+		this.releaseExclusiveAccess();
 	}
 
-	
 	public void startCheck(int id) {
-		/* COMPLETE */
+		this.gainExclusiveAccess();
+		while (this.ffs < 4) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
 	}
 
-	
 	public void endCheck(int id) {
-		/* COMPLETE */
+		this.ffs = 0;
+		this.releaseExclusiveAccess();
 	}
-
 }
