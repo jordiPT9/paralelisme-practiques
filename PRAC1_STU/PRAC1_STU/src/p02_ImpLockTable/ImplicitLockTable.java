@@ -5,6 +5,7 @@ import p00_CommonA.Table;
 public class ImplicitLockTable extends Table {
 
 	private boolean tableIsFreeToUse = true;
+	private volatile char firstCard;
 
 	protected void gainExclusiveAccess() {
 		while (true) {
@@ -25,28 +26,40 @@ public class ImplicitLockTable extends Table {
 
 	public void putJack(int id) {
 		this.gainExclusiveAccess();
-		while ((this.ffs >= 4) || (this.ffs == 0 && id != 0) || (this.ffs == 3 && id != 1)) {
+		while ((this.ffs >= 4) || (ffs == 3 && firstCard!= 'j')) {
 			this.releaseExclusiveAccess();
 			Thread.yield();
 			this.gainExclusiveAccess();
+		}
+		
+		if(ffs == 0) {
+			firstCard = 'j';
 		}
 	}
 
 	public void putQueen(int id) {
 		this.gainExclusiveAccess();
-		while ((this.ffs >= 4) || (this.ffs == 0 && id != 0) || (this.ffs == 3 && id != 1)) {
+		while ((this.ffs >= 4) || (ffs == 3 && firstCard!= 'q')) {
 			this.releaseExclusiveAccess();
 			Thread.yield();
 			this.gainExclusiveAccess();
+		}
+		
+		if(ffs == 0) {
+			firstCard = 'q';
 		}
 	}
 
 	public void putKing(int id) {
 		this.gainExclusiveAccess();
-		while ((this.ffs >= 4) || (this.ffs == 0 && id != 0) || (this.ffs == 3 && id != 1)) {
+		while ((this.ffs >= 4) || (ffs == 3 && firstCard!= 'k')) {
 			this.releaseExclusiveAccess();
 			Thread.yield();
 			this.gainExclusiveAccess();
+		}
+		
+		if(ffs == 0) {
+			firstCard = 'k';
 		}
 	}
 
@@ -65,6 +78,7 @@ public class ImplicitLockTable extends Table {
 
 	public void endCheck(int id) {
 		this.ffs = 0;
+		firstCard = ' ';
 		this.releaseExclusiveAccess();
 	}
 }

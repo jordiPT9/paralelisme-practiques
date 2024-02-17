@@ -60,7 +60,7 @@ public class CSSync implements InterfaceSync {
 		this.dingWritten = true;
 		this.dingCount++;
 		if (currentId == this.NUMINSTANCES) {
-			// this.expected = currentId++;
+			this.expected = currentId++;
 		} else {
 			currentId = 0;
 		}

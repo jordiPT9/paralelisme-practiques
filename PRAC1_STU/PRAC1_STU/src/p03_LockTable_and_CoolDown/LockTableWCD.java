@@ -4,58 +4,96 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import p00_CommonA.*;
 
-public class LockTableWCD extends Table implements CoolDownSupport{
-	
-	private ReentrantLock lock = new ReentrantLock();
-	
-	/* Declare and initialize here the required simple-typed variables */
-	
-	protected void gainExclusiveAccess() {
-		/* COMPLETE */
-	}
+public class LockTableWCD extends Table implements CoolDownSupport {
 
+	private ReentrantLock lock = new ReentrantLock();
+	private volatile boolean cooldownReady = false;
+	private volatile boolean kingPutInPos1 = false;
+
+	/* Declare and initialize here the required simple-typed variables */
+
+	protected void gainExclusiveAccess() {
+		lock.lock();
+	}
 
 	protected void releaseExclusiveAccess() {
-		/* COMPLETE */
+		lock.unlock();
 	}
-
 
 	public void putJack(int id) {
-		/* COMPLETE */
+		this.gainExclusiveAccess();
+		while ((this.ffs >= 3) || (cooldownReady && kingPutInPos1)) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
+		this.kingPutInPos1 = false;
 	}
 
-	
 	public void putQueen(int id) {
-		/* COMPLETE */
+		this.gainExclusiveAccess();
+		while ((this.ffs >= 4) || (this.ffs == 3 && id % 2 != 0) || (cooldownReady && kingPutInPos1)) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
+		this.kingPutInPos1 = false;
 	}
 
-	
 	public void putKing(int id) {
-		/* COMPLETE */
-	}
+		this.gainExclusiveAccess();
+		while ((this.ffs >= 3) || (cooldownReady && kingPutInPos1)) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
 
+		if (this.ffs == 1) {
+			this.kingPutInPos1 = true;
+		}
+	}
 
 	public void cardPut() {
-		/* COMPLETE */
+		this.releaseExclusiveAccess();
 	}
 
-	
 	public void startCheck(int id) {
-		/* COMPLETE */
+		this.gainExclusiveAccess();
+		while (this.ffs < 4) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
 	}
 
-	
 	public void endCheck(int id) {
-		/* COMPLETE */
+		this.ffs = 0;
+		this.releaseExclusiveAccess();
 	}
 
-
-	
 	// --- IMPLEMENTATION of the CoolDownSupport interface
-	
-	
+
 	public void coolDownDone() {
-		/* COMPLETE */
+		this.ffs = 0;
+		cooldownReady = false;
+		kingPutInPos1 = false;
+		this.releaseExclusiveAccess();
 	}
 
+	@Override
+	public void coolDownIsReady() {
+		this.gainExclusiveAccess();
+		cooldownReady = true;
+		this.releaseExclusiveAccess();
+	}
+
+	@Override
+	public void letCoolDownRun() {
+		this.gainExclusiveAccess();
+		while (!(cooldownReady && kingPutInPos1)) {
+			this.releaseExclusiveAccess();
+			Thread.yield();
+			this.gainExclusiveAccess();
+		}
+	}
 }

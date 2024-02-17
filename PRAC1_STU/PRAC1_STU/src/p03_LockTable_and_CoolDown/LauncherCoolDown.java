@@ -10,7 +10,7 @@ public class LauncherCoolDown {
 		
 		Scanner scanner = new Scanner(System.in);
 		
-		int instances = 4;
+		int instances = 10;
 		
 		LockTableWCD table = new LockTableWCD();
 		CoolDownThread coolDown = new CoolDownThread(table);
