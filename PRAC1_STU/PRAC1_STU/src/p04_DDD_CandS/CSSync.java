@@ -6,16 +6,19 @@ import p00_CommonB.*;
 
 public class CSSync implements InterfaceSync {
 
-	private AtomicBoolean isBoardBusy = new AtomicBoolean(true);
+	private AtomicBoolean canAccess = new AtomicBoolean(true);
 
-	private volatile boolean dingWritten = false;
-	private int dingCount = 0;
-	private volatile boolean dangWritten = false;
-	private int dangCount = 0;
-	private volatile boolean dongWritten = false;
-	private int dongCount = 0;
+	private enum STATE {
+		DINGorDONG,
+		DINGorDANG,
+		ONLYDONG,
+		ONLYDANG
+	};
 
-	private int currentId = 0;
+	private volatile STATE state = STATE.DINGorDONG;
+	private volatile int expectedId = 0;
+	private volatile int dings = 0;
+	private volatile int dangs = 0;
 
 	private final int NUMINSTANCES;
 
@@ -24,127 +27,104 @@ public class CSSync implements InterfaceSync {
 	}
 
 	public void letMeDing(int id) {
-		boolean continueLooping = true;
-
-		// bucle que comprueba infinitamente si podemos acceder a la tabla y podemos
-		// hacer DONG
-		while (continueLooping) {
-			// intentamos pedir acceso a la tabla
-			while (!isBoardBusy.compareAndSet(false, true)) {
+		boolean canGo = false;
+		while (!canGo) {
+			while (!canAccess.compareAndSet(true, false)) {
 				backOff();
 			}
-
-			// si el id del thread que quiere hacer el ding es el que toca (es consecutivo)
-			if (itsExpectedId(id)) {
-				// si puede hacer ding
-				if (this.canDing()) {
-					// salimos del bucle para escribir el ding (por tanto la tabla sigue bloqueada)
-					continueLooping = false;
+			if (expectedId == id) {
+				if (state == STATE.DINGorDONG) {
+					canGo = true;
+				} else if (state == STATE.DINGorDANG) {
+					canGo = true;
 				} else {
-					// liberamos la tabla ya que ya hemos comprovado lo que teniamos que comprovar
-					isBoardBusy.set(false);
+
+					canAccess.set(true);
 				}
 			} else {
-				// salimos del bucle ya que es un thread que tiene un id que no le toca escribir
-				continueLooping = false;
+				canAccess.set(true);
 			}
+
 		}
-	}
 
-	private boolean itsExpectedId(int id) {
-
-		return id == (this.currentId + 1);
 	}
 
 	public void dingDone(int id) {
-		this.dingWritten = true;
-		this.dingCount++;
-		if (currentId == this.NUMINSTANCES) {
-			// this.expected = currentId++;
-		} else {
-			currentId = 0;
+		expectedId = id + 1;
+		if (expectedId >= NUMINSTANCES) {
+			expectedId = 0;
 		}
-		this.isBoardBusy.set(false);
+		dings++;
+		if (dings < 3) {
+			state = STATE.DINGorDANG;
+		} else if (dings == 3)
+			state = STATE.ONLYDANG;
+		canAccess.set(true);
+
 	}
 
 	public void letMeDang(int id) {
-		boolean continueLooping = true;
-
-		// bucle que comprueba infinitamente si podemos acceder a la tabla y podemos
-		// hacer DONG
-		while (continueLooping) {
-			// intentamos pedir acceso a la tabla
-			while (!isBoardBusy.compareAndSet(false, true)) {
+		boolean canGo = false;
+		while (!canGo) {
+			while (!canAccess.compareAndSet(true, false)) {
 				backOff();
 			}
-
-			// si el id del thread que quiere hacer el ding es el que toca (es consecutivo)
-			if (itsExpectedId(id)) {
-				// si puede hacer dang
-				if (this.canDang()) {
-					// salimos del bucle para escribir el ding (por tanto la tabla sigue bloqueada)
-					continueLooping = false;
-				} else {
-					// liberamos la tabla ya que ya hemos comprovado lo que teniamos que comprovar
-					isBoardBusy.set(false);
-				}
+			if (expectedId == id) {
+				if (state == STATE.DINGorDANG) {
+					canGo = true;
+				} else if (state == STATE.ONLYDANG) {
+					canGo = true;
+				} else
+					canAccess.set(true);
 			} else {
-				// salimos del bucle ya que es un thread que tiene un id que no le toca escribir
-				continueLooping = false;
+				canAccess.set(true);
 			}
 		}
+		expectedId = id + 1;
 	}
 
 	public void dangDone() {
-		this.dangWritten = true;
-		this.dangCount++;
-		this.isBoardBusy.set(false);
+		if (expectedId >= NUMINSTANCES) {
+			expectedId = 0;
+		}
+		dangs++;
+		if (dangs >= dings) {
+			state = STATE.ONLYDONG;
+		} else if (dangs < dings) {
+			state = STATE.ONLYDANG;
+		}
+		canAccess.set(true);
 	}
 
 	public void letMeDong(int id) {
-		boolean continueLooping = true;
-
-		// bucle que comprueba infinitamente si podemos acceder a la tabla y podemos
-		// hacer DONG
-		while (continueLooping) {
-			// intentamos pedir acceso a la tabla
-			while (!isBoardBusy.compareAndSet(false, true)) {
+		boolean canGo = false;
+		while (!canGo) {
+			while (!canAccess.compareAndSet(true, false)) {
 				backOff();
 			}
-
-			// si el id del thread que quiere hacer el ding es el que toca (es consecutivo)
-			if (itsExpectedId(id)) {
-				// si puede hacer ding
-				if (this.canDong()) {
-					// salimos del bucle para escribir el ding (por tanto la tabla sigue bloqueada)
-					continueLooping = false;
+			if (expectedId == id) {
+				if (state == STATE.DINGorDONG) {
+					canGo = true;
+				} else if (state == STATE.ONLYDONG) {
+					canGo = true;
 				} else {
-					// liberamos la tabla ya que ya hemos comprovado lo que teniamos que comprovar
-					isBoardBusy.set(false);
+					canAccess.set(true);
 				}
 			} else {
-				// salimos del bucle ya que es un thread que tiene un id que no le toca escribir
-				continueLooping = false;
+				canAccess.set(true);
 			}
 		}
+		expectedId = id + 1;
 	}
 
 	public void dongDone() {
-		this.dongWritten = true;
-		this.dongCount++;
-		this.isBoardBusy.set(false);
-	}
-
-	private boolean canDing() {
-		return (this.dongWritten || this.dingWritten && this.dingCount < 3);
-	}
-
-	private boolean canDang() {
-		return (this.dingWritten || (this.dangWritten && (this.dingCount == this.dangCount + 1)));
-	}
-
-	private boolean canDong() {
-		return (this.dingWritten || this.dangWritten);
+		dings = 0;
+		dangs = 0;
+		if (expectedId >= NUMINSTANCES) {
+			expectedId = 0;
+		}
+		this.state = STATE.DINGorDONG;
+		canAccess.set(true);
 	}
 
 	// use this method instead of Thread.yield()
@@ -154,4 +134,5 @@ public class CSSync implements InterfaceSync {
 		} catch (InterruptedException ie) {
 		}
 	}
+
 }
