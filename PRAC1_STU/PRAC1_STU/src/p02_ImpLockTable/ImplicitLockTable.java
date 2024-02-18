@@ -21,7 +21,6 @@ public class ImplicitLockTable extends Table {
                     this.tableIsFreeToUse = false;
                     continueLooping = false;
                 }
-				Thread.yield();
             }
         }
     }

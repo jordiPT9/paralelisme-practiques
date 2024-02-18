@@ -27,15 +27,15 @@ public class CSSync implements InterfaceSync {
 	}
 
 	public void letMeDing(int id) {
-		boolean stop = false;
+		boolean exitLoop = false;
 
-		while (!stop) {
+		while (!exitLoop) {
 			while (!this.isBoardAvailable.compareAndSet(true, false)) {
 				backOff(); // yield
 			}
 
 			if (canDing(id)) {
-				stop = true;
+				exitLoop = true;
 			} else {
 				this.isBoardAvailable.set(true);
 			}
@@ -60,15 +60,15 @@ public class CSSync implements InterfaceSync {
 	}
 
 	public void letMeDang(int id) {
-		boolean stop = false;
+		boolean exitLoop = false;
 
-		while (!stop) {
+		while (!exitLoop) {
 			while (!this.isBoardAvailable.compareAndSet(true, false)) {
 				backOff(); // yield
 			}
 
 			if (canDang(id)) {
-				stop = true;
+				exitLoop = true;
 			} else {
 				this.isBoardAvailable.set(true);
 			}
@@ -94,14 +94,14 @@ public class CSSync implements InterfaceSync {
 	}
 
 	public void letMeDong(int id) {
-		boolean stop = false;
+		boolean exitLoop = false;
 
-		while (!stop) {
+		while (!exitLoop) {
 			while (!this.isBoardAvailable.compareAndSet(true, false)) {
 				backOff(); // yield
 			}
 			if (canDong(id)) {
-				stop = true;
+				exitLoop = true;
 			} else {
 				this.isBoardAvailable.set(true);
 			}
