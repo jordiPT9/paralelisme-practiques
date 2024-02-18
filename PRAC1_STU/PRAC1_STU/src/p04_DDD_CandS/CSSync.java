@@ -20,10 +20,10 @@ public class CSSync implements InterfaceSync {
 	private volatile int dings = 0;
 	private volatile int dangs = 0;
 
-	private final int numInstances;
+	private final int NUMINSTANCES;
 
 	public CSSync(int numInstances) {
-		this.numInstances = numInstances;
+		this.NUMINSTANCES = numInstances;
 	}
 
 	public void letMeDing(int id) {
@@ -47,7 +47,7 @@ public class CSSync implements InterfaceSync {
 	public void dingDone(int id) {
 		this.dings++;
 
-		if (this.expectedId >= numInstances) {
+		if (this.expectedId >= NUMINSTANCES) {
 			expectedId = 0;
 		}
 
@@ -80,7 +80,7 @@ public class CSSync implements InterfaceSync {
 	public void dangDone() {
 		this.dangs++;
 
-		if (this.expectedId >= numInstances) {
+		if (this.expectedId >= NUMINSTANCES) {
 			this.expectedId = 0;
 		}
 
@@ -114,7 +114,7 @@ public class CSSync implements InterfaceSync {
 		this.dings = 0;
 		this.dangs = 0;
 
-		if (this.expectedId >= numInstances) {
+		if (this.expectedId >= NUMINSTANCES) {
 			this.expectedId = 0;
 		}
 
