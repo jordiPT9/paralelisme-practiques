@@ -58,7 +58,7 @@ public class MutexTable extends Table {
 
 	public void startCheck(int id) {
 		this.gainExclusiveAccess();
-		while (this.ffs < 4) {
+		while (!handIsFull()) {
 			this.releaseExclusiveAccess();
 			Thread.yield();
 			this.gainExclusiveAccess();
