@@ -6,125 +6,120 @@ import p00_CommonB.*;
 
 public class CSSync implements InterfaceSync {
 
-	private AtomicBoolean canAccess = new AtomicBoolean(true);
+	private enum State {
+		DING_OR_DONG,
+		DING_OR_DANG,
+		ONLY_DONG,
+		ONLY_DANG
+	}
 
-	private enum STATE {
-		DINGorDONG,
-		DINGorDANG,
-		ONLYDONG,
-		ONLYDANG
-	};
+	private AtomicBoolean isBoardAvailable = new AtomicBoolean(true);
 
-	private volatile STATE state = STATE.DINGorDONG;
+	private volatile State state = State.DING_OR_DONG;
 	private volatile int expectedId = 0;
 	private volatile int dings = 0;
 	private volatile int dangs = 0;
 
-	private final int NUMINSTANCES;
+	private final int numInstances;
 
-	public CSSync(int numinstances) {
-		this.NUMINSTANCES = numinstances;
+	public CSSync(int numInstances) {
+		this.numInstances = numInstances;
 	}
 
 	public void letMeDing(int id) {
-		boolean canGo = false;
-		while (!canGo) {
-			while (!canAccess.compareAndSet(true, false)) {
-				backOff();
-			}
-			if (expectedId == id) {
-				if (state == STATE.DINGorDONG) {
-					canGo = true;
-				} else if (state == STATE.DINGorDANG) {
-					canGo = true;
-				} else {
+		boolean stop = false;
 
-					canAccess.set(true);
-				}
+		while (!stop) {
+			while (!this.isBoardAvailable.compareAndSet(true, false)) {
+				backOff(); // yield
+			}
+
+			if (canDing(id)) {
+				stop = true;
 			} else {
-				canAccess.set(true);
+				this.isBoardAvailable.set(true);
 			}
-
 		}
 
+		this.expectedId = id + 1;
 	}
 
 	public void dingDone(int id) {
-		expectedId = id + 1;
-		if (expectedId >= NUMINSTANCES) {
+		this.dings++;
+
+		if (this.expectedId >= numInstances) {
 			expectedId = 0;
 		}
-		dings++;
-		if (dings < 3) {
-			state = STATE.DINGorDANG;
-		} else if (dings == 3)
-			state = STATE.ONLYDANG;
-		canAccess.set(true);
 
+		if (this.dings < 3) {
+			this.state = State.DING_OR_DANG;
+		} else if (this.dings == 3) {
+			this.state = State.ONLY_DANG;
+		}
+		this.isBoardAvailable.set(true);
 	}
 
 	public void letMeDang(int id) {
-		boolean canGo = false;
-		while (!canGo) {
-			while (!canAccess.compareAndSet(true, false)) {
-				backOff();
+		boolean stop = false;
+
+		while (!stop) {
+			while (!this.isBoardAvailable.compareAndSet(true, false)) {
+				backOff(); // yield
 			}
-			if (expectedId == id) {
-				if (state == STATE.DINGorDANG) {
-					canGo = true;
-				} else if (state == STATE.ONLYDANG) {
-					canGo = true;
-				} else
-					canAccess.set(true);
+
+			if (canDang(id)) {
+				stop = true;
 			} else {
-				canAccess.set(true);
+				this.isBoardAvailable.set(true);
 			}
 		}
-		expectedId = id + 1;
+
+		this.expectedId = id + 1;
 	}
 
 	public void dangDone() {
-		if (expectedId >= NUMINSTANCES) {
-			expectedId = 0;
+		this.dangs++;
+
+		if (this.expectedId >= numInstances) {
+			this.expectedId = 0;
 		}
-		dangs++;
-		if (dangs >= dings) {
-			state = STATE.ONLYDONG;
-		} else if (dangs < dings) {
-			state = STATE.ONLYDANG;
+
+		if (this.dangs >= this.dings) {
+			this.state = State.ONLY_DONG;
+		} else if (this.dangs < this.dings) {
+			this.state = State.ONLY_DANG;
 		}
-		canAccess.set(true);
+
+		this.isBoardAvailable.set(true);
 	}
 
 	public void letMeDong(int id) {
-		boolean canGo = false;
-		while (!canGo) {
-			while (!canAccess.compareAndSet(true, false)) {
-				backOff();
+		boolean stop = false;
+
+		while (!stop) {
+			while (!this.isBoardAvailable.compareAndSet(true, false)) {
+				backOff(); // yield
 			}
-			if (expectedId == id) {
-				if (state == STATE.DINGorDONG) {
-					canGo = true;
-				} else if (state == STATE.ONLYDONG) {
-					canGo = true;
-				} else {
-					canAccess.set(true);
-				}
+			if (canDong(id)) {
+				stop = true;
 			} else {
-				canAccess.set(true);
+				this.isBoardAvailable.set(true);
 			}
 		}
-		expectedId = id + 1;
+
+		this.expectedId = id + 1;
 	}
 
 	public void dongDone() {
-		dings = 0;
-		dangs = 0;
-		if (expectedId >= NUMINSTANCES) {
-			expectedId = 0;
+		this.dings = 0;
+		this.dangs = 0;
+
+		if (this.expectedId >= numInstances) {
+			this.expectedId = 0;
 		}
-		this.state = STATE.DINGorDONG;
-		canAccess.set(true);
+
+		this.state = State.DING_OR_DONG;
+		this.isBoardAvailable.set(true);
 	}
 
 	// use this method instead of Thread.yield()
@@ -135,4 +130,15 @@ public class CSSync implements InterfaceSync {
 		}
 	}
 
+	private boolean canDing(int id) {
+		return (this.expectedId == id) && (this.state == State.DING_OR_DONG || state == State.DING_OR_DANG);
+	}
+
+	private boolean canDang(int id) {
+		return (this.expectedId == id) && (this.state == State.DING_OR_DANG || this.state == State.ONLY_DANG);
+	}
+
+	private boolean canDong(int id) {
+		return (this.expectedId == id) && (this.state == State.DING_OR_DONG || state == State.ONLY_DONG);
+	}
 }

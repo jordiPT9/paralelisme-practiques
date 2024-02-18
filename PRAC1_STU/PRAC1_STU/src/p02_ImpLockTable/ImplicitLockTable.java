@@ -4,81 +4,93 @@ import p00_CommonA.Table;
 
 public class ImplicitLockTable extends Table {
 
-	private boolean tableIsFreeToUse = true;
-	private volatile char firstCard;
+	private enum Card {
+        JACK,
+        QUEEN,
+        KING
+    }
 
-	protected void gainExclusiveAccess() {
-		while (true) {
-			synchronized (this) {
-				if (tableIsFreeToUse) {
-					tableIsFreeToUse = false;
-					return; // ahora que hemos bloqueado la tabla salimos de la espera infinita
-				}
-			}
-		}
-	}
+    private boolean tableIsFreeToUse = true;
+    private volatile Card firstCard;
 
-	protected void releaseExclusiveAccess() {
-		synchronized (this) {
-			tableIsFreeToUse = true;
-		}
-	}
+    protected void gainExclusiveAccess() {
+        boolean continueLooping = true;
+        while (continueLooping) {
+            synchronized (this) {
+                if (tableIsFreeToUse) {
+                    this.tableIsFreeToUse = false;
+                    continueLooping = false;
+                }
+				Thread.yield();
+            }
+        }
+    }
 
-	public void putJack(int id) {
-		this.gainExclusiveAccess();
-		while ((this.ffs >= 4) || (ffs == 3 && firstCard!= 'j')) {
-			this.releaseExclusiveAccess();
-			Thread.yield();
-			this.gainExclusiveAccess();
-		}
-		
-		if(ffs == 0) {
-			firstCard = 'j';
-		}
-	}
+    protected void releaseExclusiveAccess() {
+        synchronized (this) {
+            this.tableIsFreeToUse = true;
+        }
+    }
 
-	public void putQueen(int id) {
-		this.gainExclusiveAccess();
-		while ((this.ffs >= 4) || (ffs == 3 && firstCard!= 'q')) {
-			this.releaseExclusiveAccess();
-			Thread.yield();
-			this.gainExclusiveAccess();
-		}
-		
-		if(ffs == 0) {
-			firstCard = 'q';
-		}
-	}
+    public void putJack(int id) {
+        this.gainExclusiveAccess();
+        while (handIsFull() || (ffs == 3 && firstCard != Card.JACK)) {
+            this.releaseExclusiveAccess();
+            Thread.yield();
+            this.gainExclusiveAccess();
+        }
 
-	public void putKing(int id) {
-		this.gainExclusiveAccess();
-		while ((this.ffs >= 4) || (ffs == 3 && firstCard!= 'k')) {
-			this.releaseExclusiveAccess();
-			Thread.yield();
-			this.gainExclusiveAccess();
-		}
-		
-		if(ffs == 0) {
-			firstCard = 'k';
-		}
-	}
+        if (ffs == 0) {
+            this.firstCard = Card.JACK;
+        }
+    }
 
-	public void cardPut() {
-		this.releaseExclusiveAccess();
-	}
+    public void putQueen(int id) {
+        this.gainExclusiveAccess();
+        while (handIsFull() || (ffs == 3 && firstCard != Card.QUEEN)) {
+            this.releaseExclusiveAccess();
+            Thread.yield();
+            this.gainExclusiveAccess();
+        }
 
-	public void startCheck(int id) {
-		this.gainExclusiveAccess();
-		while (this.ffs < 4) {
-			this.releaseExclusiveAccess();
-			Thread.yield();
-			this.gainExclusiveAccess();
-		}
-	}
+        if (ffs == 0) {
+            this.firstCard = Card.QUEEN;
+        }
+    }
 
-	public void endCheck(int id) {
-		this.ffs = 0;
-		firstCard = ' ';
-		this.releaseExclusiveAccess();
-	}
+    public void putKing(int id) {
+        this.gainExclusiveAccess();
+        while (handIsFull() || (ffs == 3 && firstCard != Card.KING)) {
+            this.releaseExclusiveAccess();
+            Thread.yield();
+            this.gainExclusiveAccess();
+        }
+
+        if (ffs == 0) {
+            this.firstCard = Card.KING;
+        }
+    }
+
+    public void cardPut() {
+        this.releaseExclusiveAccess();
+    }
+
+    public void startCheck(int id) {
+        this.gainExclusiveAccess();
+        while (this.ffs < 4) {
+            this.releaseExclusiveAccess();
+            Thread.yield();
+            this.gainExclusiveAccess();
+        }
+    }
+
+    public void endCheck(int id) {
+        this.ffs = 0;
+        this.firstCard = null; // Reset the first card to null
+        this.releaseExclusiveAccess();
+    }
+
+    private boolean handIsFull() {
+        return this.ffs >= this.NUM_SLOTS;
+    }
 }
