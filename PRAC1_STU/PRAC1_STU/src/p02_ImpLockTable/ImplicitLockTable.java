@@ -89,7 +89,7 @@ public class ImplicitLockTable extends Table {
         this.releaseExclusiveAccess();
     }
 
-    // created by us
+    /* metode creat per nosaltres */
     private boolean handIsFull() {
         return this.ffs >= this.NUM_SLOTS;
     }

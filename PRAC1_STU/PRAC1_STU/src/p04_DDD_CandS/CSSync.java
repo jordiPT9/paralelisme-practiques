@@ -130,17 +130,17 @@ public class CSSync implements InterfaceSync {
 		}
 	}
 
-	// created by us
+	/* metode creat per nosaltres */
 	private boolean canDing(int id) {
 		return (this.expectedId == id) && (this.state == State.DING_OR_DONG || state == State.DING_OR_DANG);
 	}
 
-	// created by us
+	/* metode creat per nosaltres */
 	private boolean canDang(int id) {
 		return (this.expectedId == id) && (this.state == State.DING_OR_DANG || this.state == State.ONLY_DANG);
 	}
 
-	// created by us
+	/* metode creat per nosaltres */
 	private boolean canDong(int id) {
 		return (this.expectedId == id) && (this.state == State.DING_OR_DONG || state == State.ONLY_DONG);
 	}
