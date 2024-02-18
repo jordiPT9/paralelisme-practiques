@@ -70,14 +70,17 @@ public class MutexTable extends Table {
 		this.releaseExclusiveAccess();
 	}
 
+	// created by us
 	private boolean isFirstSlotAndIdIs0(int id) {
 		return this.ffs == 0 && id != 0;
 	}
 
+	// created by us
 	private boolean isLastSlotAndIdIs1(int id) {
 		return this.ffs == 3 && id != 1;
 	}
 
+	// created by us
 	private boolean handIsFull() {
 		return this.ffs >= this.NUM_SLOTS;
 	}

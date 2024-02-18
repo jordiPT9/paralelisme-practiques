@@ -4,7 +4,7 @@ import p00_CommonA.Table;
 
 public class ImplicitLockTable extends Table {
 
-	private enum Card {
+    private enum Card {
         JACK,
         QUEEN,
         KING
@@ -89,6 +89,7 @@ public class ImplicitLockTable extends Table {
         this.releaseExclusiveAccess();
     }
 
+    // created by us
     private boolean handIsFull() {
         return this.ffs >= this.NUM_SLOTS;
     }

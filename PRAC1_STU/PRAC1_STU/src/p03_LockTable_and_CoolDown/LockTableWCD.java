@@ -93,18 +93,22 @@ public class LockTableWCD extends Table implements CoolDownSupport {
 		}
 	}
 
+	// created by us
 	private boolean isHandFull() {
 		return (this.ffs >= 4);
 	}
 
+	// created by us
 	private boolean isLastPositionAndIdEven(int id) {
 		return this.ffs == 3 && id % 2 != 0;
 	}
 
+	// created by us
 	private boolean handHas1FreeSlot() {
 		return this.ffs >= 3;
 	}
 
+	// created by us
 	private boolean coolDownIsReadyAndKingInSecondSlot() {
 		return coolDownReady && kingInSecondSlot;
 	}
