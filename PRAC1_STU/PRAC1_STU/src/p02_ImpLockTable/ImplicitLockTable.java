@@ -14,12 +14,12 @@ public class ImplicitLockTable extends Table {
     private volatile Card firstCard;
 
     protected void gainExclusiveAccess() {
-        boolean continueLooping = true;
-        while (continueLooping) {
+        boolean exitLoop = false;
+        while (!exitLoop) {
             synchronized (this) {
                 if (tableIsFreeToUse) {
                     this.tableIsFreeToUse = false;
-                    continueLooping = false;
+                    exitLoop = true;
                 }
             }
         }
